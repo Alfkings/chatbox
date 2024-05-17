@@ -36,13 +36,16 @@ model Chat {
 }
 
 model Message {
-  id      Int      @id @default(autoincrement())
-  content String
-  sentAt  DateTime @default(now())
-  chatId  Int
-  userId  Int
-  chat    Chat     @relation(fields: [chatId], references: [id])
-  user    User     @relation(fields: [userId], references: [id])
+  id       Int       @id @default(autoincrement())
+  content  String
+  sentAt   DateTime  @default(now())
+  chatId   Int
+  userId   Int
+  chat     Chat      @relation(fields: [chatId], references: [id])
+  user     User      @relation(fields: [userId], references: [id])
+  parentId Int?
+  parent   Message?  @relation("Reply", fields: [parentId], references: [id])
+  replies  Message[] @relation("Reply")
 
   @@map("message")
 }

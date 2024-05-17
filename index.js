@@ -26,29 +26,30 @@ app.post('/users', async (req, res) => {
 });
 
 app.get('/users/:id', async (req, res) => {
-  const  id  = +req.params.id;
-  console.log(id);
+  const userId = parseInt(req.params.id);
+
   try {
-    const userExists = await prisma.user.findFirstOrThrow({
-      where: {
-        id: id,
+    const user = await prisma.user.findUnique({
+      where: { 
+        id: userId
+       },
+      include: {
+        Chat: true, 
+        Message: {
+          include: {
+            replies: true,
+          },
+        },
       },
     });
-    if (!userExists) {
-        res.status(404).json({ error: "User not found" });
+
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
     }
-      const user = await prisma.user.findFirst({
-        where: {
-          id: id,
-        },
-        include: {
-          Chat: true,
-          Message: true,
-        },
-      });
-      res.json(user);
+
+    res.status(200).json(user);
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    res.status(400).json({ error: error.message });
   }
 });
 
@@ -360,6 +361,35 @@ app.post('/chats/:chatId/users/:userId/messages', async (req, res) => {
   }
 });
 
+app.post('/messages/:messageId/reply', async (req, res) => {
+  const messageId = +req.params.messageId;
+  const { userId, content } = req.body;
+
+  try {
+    const originalMessage = await prisma.message.findUnique({
+      where: { id:messageId },
+      include: { chat: true },
+    });
+
+    if (!originalMessage) {
+      return res.status(404).json({ error: 'Original message not found' });
+    }
+
+    const replyMessage = await prisma.message.create({
+      data: {
+        content: content,
+        sentAt: new Date(),
+        chatId: originalMessage.chatId,
+        userId: parseInt(userId),
+        parentId: originalMessage.id,
+      },
+    });
+
+    res.status(201).json(replyMessage);
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+});
 
 
 app.get('/users/:userId/messages', async (req, res) => {

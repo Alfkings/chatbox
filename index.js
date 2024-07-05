@@ -11,12 +11,13 @@ app.use(express.json())
 
 // ---users---//
 app.post('/users', async (req, res) => {
-  const { name, email } = req.body;
+  const { name, email,date } = req.body;
   try {
     const user = await prisma.user.create({
       data: { 
          name,
-         email
+         email,
+         date
          },
     });
     res.status(201).json(user);
